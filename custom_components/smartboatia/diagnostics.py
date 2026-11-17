@@ -10,7 +10,18 @@ from homeassistant.core import HomeAssistant
 from . import SmartboatiaConfigEntry
 from .const import CONF_API_KEY
 
-TO_REDACT = {CONF_API_KEY, "username", "password", "token", "topic", "boat_id"}
+# the boat position and the boat id are redacted as well (keys of the flattened
+# values are "<measurement>/<variant>/<field>")
+TO_REDACT = {
+    CONF_API_KEY,
+    "username",
+    "password",
+    "token",
+    "topic",
+    "boat_id",
+    "gps_pos//lat",
+    "gps_pos//long",
+}
 
 
 async def async_get_config_entry_diagnostics(

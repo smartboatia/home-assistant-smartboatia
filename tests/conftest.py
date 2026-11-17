@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+
 import cbor2
 import pytest
 
@@ -18,9 +20,16 @@ API_KEY = "sbk_" + "A" * 43
 BOAT_ID = "boat-test-id"
 
 
-def make_message(*items: tuple[int, object], origin: object = None) -> bytes:
-    """Build an N-message v3 from (key, python value) pairs."""
-    pairs = [(0, 3), (1, EXAMPLE_TS), (2, {0: 0} if origin is None else origin), *items]
+def make_message(
+    *items: tuple[int, object], origin: object = None, ts: int | None = None
+) -> bytes:
+    """Build an N-message v3 from (key, python value) pairs.
+
+    ``ts`` is the message timestamp in ms, by default now.
+    """
+    if ts is None:
+        ts = int(time.time() * 1000)
+    pairs = [(0, 3), (1, ts), (2, {0: 0} if origin is None else origin), *items]
     return bytes([0xA0 + len(pairs)]) + b"".join(
         cbor2.dumps(k) + (v if isinstance(v, bytes) else cbor2.dumps(v))
         for k, v in pairs

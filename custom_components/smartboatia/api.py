@@ -12,7 +12,13 @@ from typing import Any
 
 import aiohttp
 
-from .const import API_BASE_URL, REQUEST_TIMEOUT, TOKEN_PATH
+from .const import (
+    API_BASE_URL,
+    MAX_EXPIRES_IN_SECONDS,
+    MIN_EXPIRES_IN_SECONDS,
+    REQUEST_TIMEOUT,
+    TOKEN_PATH,
+)
 
 
 class SmartboatiaError(Exception):
@@ -103,10 +109,11 @@ def parse_token_response(body: Any, received_at: float) -> MqttToken:
         or not topic
         or isinstance(expires_in, bool)
         or not isinstance(expires_in, (int, float))
-        or expires_in <= 0
+        or expires_in < MIN_EXPIRES_IN_SECONDS
     ):
         raise TemporarilyUnavailable("malformed answer")
-    return MqttToken(username, password, float(expires_in), topic, received_at)
+    expires_in = min(float(expires_in), MAX_EXPIRES_IN_SECONDS)
+    return MqttToken(username, password, expires_in, topic, received_at)
 
 
 def _retry_after(response: aiohttp.ClientResponse) -> float | None:

@@ -29,6 +29,15 @@ RENEW_MARGIN_SECONDS = 5 * 60
 REUSE_MARGIN_SECONDS = 60
 RENEW_RETRY_SECONDS = 60
 CONNECT_TIMEOUT_SECONDS = 30.0
+# a link that stayed up and subscribed this long counts as healthy: only then the
+# failure counter (and with it the reconnect backoff) starts over
+STABLE_AFTER_SECONDS = 60.0
+# never two token exchanges closer than this (the cloud allows 20 per key and hour,
+# 240 s is at most 15 per hour whatever fails)
+MIN_MINT_INTERVAL_SECONDS = 240.0
+# a token that lives shorter than this is unusable
+MIN_EXPIRES_IN_SECONDS = 10.0
+MAX_EXPIRES_IN_SECONDS = 86400.0
 
 # Backoff (seconds). The cloud allows 20 exchanges per key per hour.
 BACKOFF_MIN_SECONDS = 5.0

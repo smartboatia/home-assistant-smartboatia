@@ -53,6 +53,7 @@ def test_repr_hides_secrets():
         {},
         {**BODY, "credentials": {}},
         {**BODY, "expires_in": 0},
+        {**BODY, "expires_in": 5},
         {**BODY, "expires_in": True},
         {**BODY, "expires_in": "3600"},
         {**BODY, "topic": ""},
@@ -112,3 +113,20 @@ async def test_network_error(hass, aioclient_mock):
 
     with pytest.raises(TemporarilyUnavailable):
         await async_mint_token(async_get_clientsession(hass), API_KEY)
+
+
+@pytest.mark.parametrize("status", [200, 401, 500])
+async def test_key_and_token_never_logged(hass, aioclient_mock, caplog, status):
+    import logging
+
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
+    aioclient_mock.post(URL, status=status, json=BODY if status == 200 else {})
+    with caplog.at_level(logging.DEBUG):
+        try:
+            await async_mint_token(async_get_clientsession(hass), API_KEY)
+        except Exception:  # noqa: BLE001
+            pass
+    assert API_KEY not in caplog.text
+    assert "jwt-secret" not in caplog.text
+    assert "api:1234" not in caplog.text

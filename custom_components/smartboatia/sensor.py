@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, replace
+from datetime import datetime
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -335,6 +336,7 @@ async def async_setup_entry(
         if new:
             async_add_entities(new)
 
+    async_add_entities([SmartboatiaLastUpdate(coordinator)])
     _add_new()
     entry.async_on_unload(coordinator.async_add_listener(_add_new))
 
@@ -372,3 +374,26 @@ class SmartboatiaSensor(SmartboatiaEntity, SensorEntity):
             return None
         convert = self.entity_description.value_fn
         return convert(value) if convert else value
+
+
+class SmartboatiaLastUpdate(SmartboatiaEntity, SensorEntity):
+    """When the boat's latest message was created (shows how old the data is)."""
+
+    _attr_translation_key = "last_update"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator: SmartboatiaCoordinator) -> None:
+        """Initialize."""
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.boat_id}_last_update"
+
+    @property
+    def available(self) -> bool:
+        """Available once a message was received, also when its data is old."""
+        return self.coordinator.data.timestamp is not None
+
+    @property
+    def native_value(self) -> datetime | None:
+        """Creation time of the latest message."""
+        return self.coordinator.data.timestamp

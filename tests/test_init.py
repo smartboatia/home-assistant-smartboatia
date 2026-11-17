@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 import logging
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from homeassistant.config_entries import ConfigEntryState
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
@@ -19,16 +20,20 @@ from pytest_homeassistant_custom_component.components.diagnostics import (
     get_diagnostics_for_config_entry,
 )
 
-from custom_components.smartboatia.api import (
-    InvalidAuth,
-    MqttToken,
-    TemporarilyUnavailable,
-)
 from custom_components.smartboatia.const import CONF_API_KEY, DOMAIN
 
-from .conftest import API_KEY, BOAT_ID, EXAMPLE_HEX, make_message
+from .conftest import API_KEY, BOAT_ID, EXAMPLE_HEX, EXAMPLE_TS, make_message
 
-MINT = "custom_components.smartboatia.async_mint_token"
+MINT = "custom_components.smartboatia.connection.async_mint_token"
+NOW = "custom_components.smartboatia.coordinator._now"
+
+T0 = datetime(2026, 11, 17, 12, 0, 0, tzinfo=UTC)
+
+
+def ms(delta_seconds: float) -> int:
+    """Message timestamp (ms) at T0 plus an offset."""
+    return int((T0.timestamp() + delta_seconds) * 1000)
+
 CONN = "custom_components.smartboatia.coordinator.SmartboatiaConnection"
 
 
@@ -37,8 +42,9 @@ class FakeConnection:
 
     last: FakeConnection | None = None
 
-    def __init__(self, hass, session, api_key, *, on_payload, on_state, on_auth_failed, first_token):
+    def __init__(self, hass, session, api_key, *, on_payload, on_state, on_auth_failed):
         self.on_payload = on_payload
+        self.on_auth_failed = on_auth_failed
         self.started = False
         self.stopped = False
         self.api_key = api_key
@@ -54,14 +60,10 @@ class FakeConnection:
         return {"state": "connected", "username": "api:secret-user"}
 
 
-def token():
-    return MqttToken("api:secret-user", "jwt-secret", 3600.0, f"{BOAT_ID}/n", 0.0)
-
-
 async def setup_entry(hass):
     entry = MockConfigEntry(domain=DOMAIN, unique_id=BOAT_ID, data={CONF_API_KEY: API_KEY})
     entry.add_to_hass(hass)
-    with patch(MINT, return_value=token()), patch(CONN, FakeConnection):
+    with patch(CONN, FakeConnection):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
     return entry
@@ -74,7 +76,8 @@ async def test_entities_from_spec_example(hass):
     # nothing yet: no message, no data
     assert hass.states.get("sensor.smartboatia_boat_speed_over_ground") is None
 
-    FakeConnection.last.on_payload(bytes.fromhex(EXAMPLE_HEX))
+    with patch(NOW, return_value=datetime.fromtimestamp(EXAMPLE_TS / 1000 + 5, UTC)):
+        FakeConnection.last.on_payload(bytes.fromhex(EXAMPLE_HEX))
     await hass.async_block_till_done()
 
     sog = hass.states.get("sensor.smartboatia_boat_speed_over_ground")
@@ -132,6 +135,9 @@ async def test_garbage_is_ignored(hass, caplog):
         conn.on_payload(b"")
     await hass.async_block_till_done()
     assert hass.states.get("device_tracker.smartboatia_boat_position").state == "unavailable"
+    assert caplog.text.count("Ignoring a message that is not N-message v3") == 2
+    assert caplog.text.count("Discarding an invalid N-message") == 1
+    assert "1761578411000A" not in caplog.text
 
 
 async def test_stale_values_become_unavailable(hass):
@@ -143,6 +149,8 @@ async def test_stale_values_become_unavailable(hass):
         async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=61))
         await hass.async_block_till_done()
     assert hass.states.get("sensor.smartboatia_boat_speed_over_ground").state == "unavailable"
+    # the timestamp of the last message stays visible
+    assert hass.states.get("sensor.smartboatia_boat_last_update").state != "unavailable"
 
 
 async def test_unload_stops_connection(hass):
@@ -153,27 +161,87 @@ async def test_unload_stops_connection(hass):
     assert entry.state is ConfigEntryState.NOT_LOADED
 
 
-async def test_setup_invalid_key_starts_reauth(hass):
+async def test_setup_does_not_mint_and_survives_a_dead_cloud(hass):
+    """Setup returns at once; the connection owns the exchanges and their backoff."""
     entry = MockConfigEntry(domain=DOMAIN, unique_id=BOAT_ID, data={CONF_API_KEY: API_KEY})
     entry.add_to_hass(hass)
-    with patch(MINT, side_effect=InvalidAuth()):
-        await hass.config_entries.async_setup(entry.entry_id)
+    with patch(CONN, FakeConnection), patch(MINT, new=AsyncMock()) as mint:
+        assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
-    assert entry.state is ConfigEntryState.SETUP_ERROR
-    assert any(f["context"]["source"] == "reauth" for f in hass.config_entries.flow.async_progress())
+    mint.assert_not_called()
+    assert entry.state is ConfigEntryState.LOADED
 
 
-async def test_setup_cloud_unavailable_retries(hass):
-    entry = MockConfigEntry(domain=DOMAIN, unique_id=BOAT_ID, data={CONF_API_KEY: API_KEY})
-    entry.add_to_hass(hass)
-    with patch(MINT, side_effect=TemporarilyUnavailable()):
-        await hass.config_entries.async_setup(entry.entry_id)
-    assert entry.state is ConfigEntryState.SETUP_RETRY
+async def test_rejected_key_starts_reauth(hass):
+    entry = await setup_entry(hass)
+    FakeConnection.last.on_auth_failed()
+    await hass.async_block_till_done()
+    assert any(
+        f["context"]["source"] == "reauth" and f["context"]["entry_id"] == entry.entry_id
+        for f in hass.config_entries.flow.async_progress()
+    )
+
+
+async def test_homeassistant_stop_disconnects(hass):
+    await setup_entry(hass)
+    conn = FakeConnection.last
+    hass.bus.async_fire(EVENT_HOMEASSISTANT_STOP)
+    await hass.async_block_till_done()
+    assert conn.stopped
+
+
+async def test_old_retained_message_is_not_live(hass):
+    """A boat offline for a day: the replayed message must not look current."""
+    await setup_entry(hass)
+    conn = FakeConnection.last
+    with patch(NOW, return_value=T0):
+        conn.on_payload(
+            make_message((18, 5.0), (10, {0: 53.55, 1: 9.99}), ts=ms(-86400))
+        )
+        await hass.async_block_till_done()
+        assert hass.states.get("sensor.smartboatia_boat_speed_over_ground") is None
+        tracker = hass.states.get("device_tracker.smartboatia_boat_position")
+        assert tracker.state == "unavailable"
+        # the user can still see how old the data is
+        last = hass.states.get("sensor.smartboatia_boat_last_update")
+        assert last.state == (T0 - timedelta(days=1)).isoformat()
+
+        # a fresh message takes over
+        conn.on_payload(make_message((18, 5.0), ts=ms(-30)))
+        await hass.async_block_till_done()
+    assert hass.states.get("sensor.smartboatia_boat_speed_over_ground").state == "5.0"
+    last = hass.states.get("sensor.smartboatia_boat_last_update")
+    assert last.state == (T0 - timedelta(seconds=30)).isoformat()
+
+
+@pytest.mark.parametrize(
+    ("offset", "live"),
+    [
+        (-30, True),
+        (-180, True),  # Hub clock a few minutes behind
+        (+180, True),  # Hub clock a few minutes ahead
+        (+7200, True),  # far ahead cannot be an old replay
+        (-590, True),
+        (-660, False),  # older than the stale limit
+    ],
+)
+async def test_message_age_and_clock_skew(hass, offset, live):
+    await setup_entry(hass)
+    with patch(NOW, return_value=T0):
+        FakeConnection.last.on_payload(make_message((18, 5.0), ts=ms(offset)))
+        await hass.async_block_till_done()
+    sog = hass.states.get("sensor.smartboatia_boat_speed_over_ground")
+    if live:
+        assert sog.state == "5.0"
+    else:
+        assert sog is None
 
 
 async def test_diagnostics_redact_secrets(hass, hass_client):
     entry = await setup_entry(hass)
-    FakeConnection.last.on_payload(make_message((18, 5.0)))
+    FakeConnection.last.on_payload(
+        make_message((18, 5.0), (10, {0: 53.5512, 1: 9.9876}))
+    )
     await hass.async_block_till_done()
     diag = await get_diagnostics_for_config_entry(hass, hass_client, entry)
     text = str(diag)
@@ -183,6 +251,11 @@ async def test_diagnostics_redact_secrets(hass, hass_client):
     assert BOAT_ID not in text
     assert diag["entry"][CONF_API_KEY] == "**REDACTED**"
     assert diag["last_message"]["values"]["sog//speed"] == 5.0
+    # the live position is redacted
+    assert diag["last_message"]["values"]["gps_pos//lat"] == "**REDACTED**"
+    assert diag["last_message"]["values"]["gps_pos//long"] == "**REDACTED**"
+    assert "53.5512" not in text
+    assert "9.9876" not in text
 
 
 async def test_api_key_never_logged(hass, caplog):

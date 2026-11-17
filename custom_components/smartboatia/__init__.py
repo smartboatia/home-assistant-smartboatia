@@ -7,18 +7,8 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.exceptions import ConfigEntryError
 
-from .api import (
-    InvalidAuth,
-    NoSubscription,
-    NotBoatOwner,
-    RateLimited,
-    TemporarilyUnavailable,
-    async_mint_token,
-)
-from .const import CONF_API_KEY, DOMAIN
 from .coordinator import SmartboatiaCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -29,20 +19,15 @@ type SmartboatiaConfigEntry = ConfigEntry[SmartboatiaCoordinator]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: SmartboatiaConfigEntry) -> bool:
-    """Set up Smartboatia from a config entry."""
-    session = async_get_clientsession(hass)
-    try:
-        token = await async_mint_token(session, entry.data[CONF_API_KEY])
-    except (InvalidAuth, NotBoatOwner) as err:
-        raise ConfigEntryAuthFailed("The API key was rejected") from err
-    except NoSubscription as err:
-        raise ConfigEntryNotReady("The boat has no active subscription") from err
-    except (RateLimited, TemporarilyUnavailable) as err:
-        raise ConfigEntryNotReady(
-            "The Smartboatia cloud is temporarily unavailable"
-        ) from err
+    """Set up Smartboatia from a config entry.
 
-    coordinator = SmartboatiaCoordinator(hass, entry, token.boat_id, token)
+    No token is minted here: the connection does the first exchange itself, with its
+    backoff (the cloud allows only 20 exchanges per key and hour, so retrying through
+    Home Assistant's setup retry would exceed it). A rejected key starts reauth.
+    """
+    if entry.unique_id is None:
+        raise ConfigEntryError("The entry has no boat id, please add it again")
+    coordinator = SmartboatiaCoordinator(hass, entry, entry.unique_id)
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     coordinator.async_start()
