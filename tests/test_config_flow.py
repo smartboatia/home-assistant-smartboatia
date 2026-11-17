@@ -44,6 +44,7 @@ async def test_user_flow_creates_entry(hass):
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"] == {CONF_API_KEY: API_KEY}
     assert result["result"].unique_id == BOAT_ID
+    assert result["title"] == "Smartboatia a1b2c3"
 
 
 @pytest.mark.parametrize(

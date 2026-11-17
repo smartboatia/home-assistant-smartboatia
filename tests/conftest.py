@@ -17,7 +17,7 @@ EXAMPLE_HEX = (
     "18f501a1020014f94c601506"
 )
 API_KEY = "sbk_" + "A" * 43
-BOAT_ID = "boat-test-id"
+BOAT_ID = "boat-a1b2c3"
 
 
 def make_message(

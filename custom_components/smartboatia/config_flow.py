@@ -26,6 +26,7 @@ from .api import (
     async_mint_token,
 )
 from .const import API_KEY_PATTERN, CONF_API_KEY, DOMAIN
+from .entity import short_boat_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -76,7 +77,8 @@ class SmartboatiaConfigFlow(ConfigFlow, domain=DOMAIN):
                 await self.async_set_unique_id(boat_id)
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
-                    title="Smartboatia", data={CONF_API_KEY: api_key}
+                    title=f"Smartboatia {short_boat_id(boat_id)}",
+                    data={CONF_API_KEY: api_key},
                 )
             errors["base"] = error or "unknown"
         return self.async_show_form(
