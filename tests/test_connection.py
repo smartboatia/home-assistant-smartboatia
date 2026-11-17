@@ -293,9 +293,9 @@ async def test_link_factory_error_is_survived_and_not_leaked(hass, caplog):
     )
     with caplog.at_level(logging.DEBUG):
         conn.async_start()
-        await wait_for(lambda: len(FakeLink.instances) == 1)
+        await wait_for(lambda: conn.state == STATE_CONNECTED)
+    assert len(FakeLink.instances) == 1
     assert STATE_UNAVAILABLE in states
-    assert conn.state == STATE_CONNECTED
     assert not conn._task.done()
     assert "secret-in-message" not in caplog.text
     assert "RuntimeError" in caplog.text
