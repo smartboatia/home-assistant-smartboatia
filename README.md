@@ -2,7 +2,7 @@
 
 **Your boat knows more than it shows you. Soon, your Home Assistant will too.**
 
-This integration brings your boat into your smart home: position, batteries, wind and alarms from [Smartboatia](https://www.smartboatia.com/en/), right next to the lights, the heating and everything else you already run in Home Assistant.
+This integration brings your boat into your smart home: position, batteries and wind from [Smartboatia](https://www.smartboatia.com/en/), right next to the lights, the heating and everything else you already run in Home Assistant.
 
 > **Status:** first version 0.1.0, prepared for release. It needs the Smartboatia cloud
 > API key feature, which is being rolled out; see [Requirements](#requirements).
@@ -98,12 +98,17 @@ and the connection is renewed automatically.
 
 One device per boat. Entities appear when the value is first seen. A value that is
 missing from a message (sensor off, data too old) makes the entity
-**unavailable**, never zero. If no message arrives for ten minutes all values
-become unavailable. The broker replays the last message when Home Assistant
-connects; if that message is older than ten minutes (a boat that was offline) it
-is not shown as live. A diagnostic sensor **Last update** always shows the time of
-the latest message, so you can see how old the data is. (A Hub whose clock is
-hours behind real time would therefore always show its data as old.)
+**unavailable**, never zero. If no live message arrives for ten minutes all values
+become unavailable.
+
+The broker replays the last message (a "retained" message) every time the
+connection is made, which happens at every start and about once an hour when the
+connection is renewed. Such a replay is treated specially: as the very first value
+after a start it is shown only if its timestamp is within the last ten minutes, and
+afterwards a replay is ignored. It never keeps values alive, so a boat that went
+offline becomes unavailable after ten minutes however often the connection is
+renewed. A diagnostic sensor **Last update** shows the time of the latest message,
+so you can see how old the data is.
 
 | Entity | Unit |
 |---|---|
@@ -133,10 +138,11 @@ this version.
 ## Limits
 
 - The cloud allows 20 token exchanges per key per hour. The integration needs
-  about one per hour, never makes two within four minutes and backs off on every
-  error (also when the broker refuses or drops the connection), so it stays at or
-  below 15 per hour even when everything fails. Only several Home Assistant
-  instances sharing one key, or repeated restarts, can reach the limit.
+  about one per hour. The running connection never makes two requests within four
+  minutes and backs off on every error (also when the broker refuses or drops the
+  connection), so it stays at or below 15 per hour even when everything fails.
+  Several Home Assistant instances sharing one key, or repeated restarts of Home
+  Assistant (each start makes a request at once), can still reach the limit.
 - Data is at most as fresh as the Hub's message interval (about 60 seconds).
 - Only N-message version 3 is understood; other formats are ignored.
 - If the boat has no active subscription, or the person who created the key is no
@@ -155,6 +161,17 @@ this version.
 - **Entities stay unavailable**: check the **Last update** sensor. If it is old,
   the Hub is not sending data (offline, no internet). The data is only shown as live
   if the message is newer than ten minutes.
+- **Everything unavailable although the Hub is online (Hub clock behind)**: the age
+  of a message is judged from the timestamp the Hub puts into it. If the Hub's clock
+  is more than ten minutes behind real time (for example it started without internet
+  and has not synchronised), every message looks old and is not shown as live. The
+  **Last update** sensor then shows a time in the past. Fix the Hub's time (internet
+  connection, time sync).
+- **Data stays live for a while after the boat went offline (Hub clock ahead)**: if
+  the Hub's clock runs ahead, a message can carry a timestamp in the future, which
+  cannot be told from a live one. After a Home Assistant restart such a replayed
+  message is shown for up to ten minutes. During normal operation a boat that goes
+  offline still becomes unavailable ten minutes after its last live message.
 - **Entities missing**: entities for batteries, tanks, engines and so on appear
   when the Hub reports them for the first time, within about a minute.
 - **Debug logs**: add `custom_components.smartboatia: debug` to the `logger`
