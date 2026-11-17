@@ -32,6 +32,11 @@ def _now() -> datetime:
     return dt_util.utcnow()
 
 
+def _monotonic() -> float:
+    """Monotonic seconds (a seam for tests)."""
+    return time.monotonic()
+
+
 class SmartboatiaCoordinator(DataUpdateCoordinator[BoatSnapshot]):
     """Holds the latest boat snapshot and the broker connection."""
 
@@ -51,6 +56,7 @@ class SmartboatiaCoordinator(DataUpdateCoordinator[BoatSnapshot]):
         self.data = BoatSnapshot()
         self.connection_state = "connecting"
         self._last_received: float | None = None
+        self._seen_message = False
         self.connection = (connection_factory or SmartboatiaConnection)(
             hass,
             async_get_clientsession(hass),
@@ -89,28 +95,45 @@ class SmartboatiaCoordinator(DataUpdateCoordinator[BoatSnapshot]):
         await self.connection.async_stop()
 
     @callback
-    def handle_payload(self, payload: bytes) -> None:
-        """Handle one message from the broker."""
+    def handle_payload(self, payload: bytes, retained: bool = False) -> None:
+        """Handle one message from the broker.
+
+        Args:
+            payload: The raw message.
+            retained: The MQTT retain flag. The broker replays the retained message
+                on every subscribe (also at every hourly reconnect), so a retained
+                message says nothing about the boat being online now.
+        """
         if not is_v3(payload):
             _LOGGER.debug("Ignoring a message that is not N-message v3")
+            return
+        if retained and self._seen_message:
+            # A replay after a reconnect: never refreshes the liveness timer and
+            # never revives values that went stale (the data is either the message
+            # we already have or an older one).
+            _LOGGER.debug("Ignoring a replayed retained message")
             return
         try:
             message = decode_n_message(payload)
         except NMessageError as err:
             _LOGGER.debug("Discarding an invalid N-message (%s)", err)
             return
+        self._seen_message = True
         snapshot = build_snapshot(message)
-        # The broker replays the retained message on every subscribe. A boat that
-        # has been offline for hours must not show its old data as live: a message
-        # older than the stale limit only updates the "last update" timestamp.
-        # (A timestamp in the future, i.e. a Hub clock that runs ahead, is accepted:
-        # it cannot be an old replay.)
+        # A message older than the stale limit only updates the "last update"
+        # timestamp (so a Hub clock more than the stale limit behind real time shows
+        # its data as old, see the README). A timestamp in the future (a Hub clock that
+        # runs ahead) is accepted: it cannot be told from a live message.
         age = (_now() - message.timestamp).total_seconds()
         if age > STALE_AFTER_SECONDS:
             _LOGGER.debug("Message is %d s old, not treating it as live", int(age))
             snapshot.values = {}
+        elif retained:
+            # first value after (re)start from the retained message: it is only as
+            # live as its age says, so the liveness window counts from its creation
+            self._last_received = _monotonic() - max(0.0, age)
         else:
-            self._last_received = time.monotonic()
+            self._last_received = _monotonic()
         self.async_set_updated_data(snapshot)
 
     @callback
@@ -119,7 +142,7 @@ class SmartboatiaCoordinator(DataUpdateCoordinator[BoatSnapshot]):
         if (
             self._last_received is not None
             and self.data.values
-            and time.monotonic() - self._last_received > STALE_AFTER_SECONDS
+            and _monotonic() - self._last_received > STALE_AFTER_SECONDS
         ):
             _LOGGER.debug("No message for a while, marking values stale")
             self.async_set_updated_data(

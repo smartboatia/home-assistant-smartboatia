@@ -117,7 +117,7 @@ class PahoLink:
         self,
         loop: asyncio.AbstractEventLoop,
         token: MqttToken,
-        on_payload: Callable[[bytes], None],
+        on_payload: Callable[[bytes, bool], None],
     ) -> None:
         """Prepare the link; ``start()`` connects."""
         import paho.mqtt.client as mqtt  # noqa: PLC0415
@@ -192,7 +192,10 @@ class PahoLink:
         if message.topic != self._topic:
             return
         payload = bytes(message.payload)
-        self._loop.call_soon_threadsafe(self._on_payload, payload)
+        # the retain flag tells a replay of the stored message (after a subscribe)
+        # from a message that was just published
+        retained = bool(message.retain)
+        self._loop.call_soon_threadsafe(self._on_payload, payload, retained)
 
 
 class SmartboatiaConnection:
@@ -204,7 +207,7 @@ class SmartboatiaConnection:
         session: aiohttp.ClientSession | None,
         api_key: str,
         *,
-        on_payload: Callable[[bytes], None],
+        on_payload: Callable[[bytes, bool], None],
         on_state: Callable[[str], None],
         on_auth_failed: Callable[[], None],
         first_token: MqttToken | None = None,

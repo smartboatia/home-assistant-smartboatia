@@ -21,7 +21,7 @@ SUBACK_DENIED = ReasonCode(PacketTypes.SUBACK, "Unspecified error")
 def make(hass):
     payloads = []
     token = MqttToken("api:u", "jwt", 3600.0, "boat/n", 0.0)
-    link = PahoLink(hass.loop, token, payloads.append)
+    link = PahoLink(hass.loop, token, lambda payload, retained: payloads.append((payload, retained)))
     return link, payloads
 
 
@@ -60,10 +60,18 @@ async def test_auth_reject_is_flagged(hass):
 
 async def test_only_the_granted_topic_is_delivered(hass):
     link, payloads = make(hass)
-    link._on_message(None, None, SimpleNamespace(topic="other/n", payload=b"x"))
-    link._on_message(None, None, SimpleNamespace(topic="boat/n", payload=b"y"))
+    link._on_message(None, None, SimpleNamespace(topic="other/n", payload=b"x", retain=False))
+    link._on_message(None, None, SimpleNamespace(topic="boat/n", payload=b"y", retain=False))
     await asyncio.sleep(0)
-    assert payloads == [b"y"]
+    assert payloads == [(b"y", False)]
+
+
+async def test_retain_flag_is_passed_on(hass):
+    link, payloads = make(hass)
+    link._on_message(None, None, SimpleNamespace(topic="boat/n", payload=b"r", retain=True))
+    link._on_message(None, None, SimpleNamespace(topic="boat/n", payload=b"l", retain=False))
+    await asyncio.sleep(0)
+    assert payloads == [(b"r", True), (b"l", False)]
 
 
 async def test_disconnect_signals_lost(hass):
