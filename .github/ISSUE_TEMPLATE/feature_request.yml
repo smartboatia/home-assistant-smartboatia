@@ -1,0 +1,17 @@
+name: Feature request
+description: Suggest an idea for this integration
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do?
+      description: Describe the use case. Which boat data do you want to see or use in Home Assistant?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How could it work?
+    validations:
+      required: false
