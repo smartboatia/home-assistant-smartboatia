@@ -1,30 +1,37 @@
 # Smartboatia for Home Assistant
 
-**Your boat, right next to your home.** This integration will bring your boat into Home Assistant: position, batteries, wind and alarms from your [Smartboatia Hub](https://www.smartboatia.com/en/shop/smartboatia-hub/), on the same dashboard as the rest of your life.
+**Your boat knows more than it shows you. Soon, your Home Assistant will too.**
 
-> **Status:** in development. There is no release yet. Watch this repository to get notified when the first version is out.
+This integration brings your boat into your smart home: position, batteries, wind and alarms from [Smartboatia](https://www.smartboatia.com/en/), right next to the lights, the heating and everything else you already run in Home Assistant.
 
-## Why a boat belongs in Home Assistant
+> **Status:** in development, no release yet. Watch this repository to hear about the first version.
 
-You already know whether the garage door is closed. You should also know whether your boat is fine: is it still where you left it, are the batteries holding up, is the wind picking up at the anchorage? With this integration, your boat becomes part of your smart home. The goal:
+## Why your boat belongs in your smart home
 
-- see your boat's status on your Home Assistant dashboard,
-- build automations around it, like a notification when the battery drops or the wind gets strong,
-- combine boat data with everything else you already run in Home Assistant.
+You know whether the garage door is closed. But is your boat fine? Is it still where you left it, are the batteries holding up, is the wind picking up at the anchorage? With this integration your boat becomes part of your home automation:
+
+- your boat's status on your Home Assistant dashboard
+- automations around your boat, like a notification on your phone or a light that turns red when the battery runs low or the wind gets strong
+- boat data combined with everything else in your home, from the weather station in the garden to the calendar of your next trip
 
 ## What is Smartboatia?
 
-[Smartboatia](https://www.smartboatia.com/en/) is built by sailors in Travemünde, Germany, for skippers of sail and motor boats. At its heart is the **Smartboatia Hub**, a small onboard computer that connects to your boat's NMEA 2000 network and turns the data your boat already produces into real help:
+Smartboatia makes boats smarter, for sail and motor boats alike. The Smartboatia Hub on board, the app and the cloud work together and turn the data your boat already produces into answers instead of numbers. Built by sailors in Travemünde, Germany.
 
-- **Logbook that writes itself:** casting off, anchoring, mooring, engine hours, tacks and gybes are logged automatically with time and position.
-- **Boat monitoring:** anchor watch, battery and position alarms, also when you are not on board. The Hub keeps watching even when your phone is off.
-- **Plotter and navigation:** charts in the app, NMEA multiplexer and Wi-Fi access point in one device. No lock-in.
-- **Weather and environment:** barometer with storm warning, wind history and water-level alarm.
-- **Community:** see where your boat buddies are and share your trips.
+- 📔 **Logbook that writes itself.** Casting off, anchoring, mooring, engine hours and manoeuvres are logged automatically. Add notes, photos and crew whenever you like.
+- ⚓ **Boat monitoring, on board and ashore.** Anchor watch, batteries and position at a glance, with alarms that run on board even when your phone is off.
+- 🌬️ **Weather and environment.** Your boat measures for itself: real trends in wind and air pressure, exactly where you are.
+- 🧭 **Plotter and navigation.** Your boat's data and charts on every device.
+- 📱 **Community and sharing.** Share your trips with crew, family and friends, and see where your boat buddies are.
+- 🏆 **Sailing performance.** Polars from your own data, trim tips and manoeuvre analysis, for sailors.
 
-**13 devices. One Hub that thinks along.** Designed, assembled and tested in Germany, made in the EU. And your data belongs to you.
+## Open by design
 
-👉 [Discover the Hub](https://www.smartboatia.com/en/shop/smartboatia-hub/) · [Try it for 30 days](https://www.smartboatia.com/en/30-day-trial/)
+Your data belongs to you. Smartboatia uses open interfaces and connects to what you already have instead of locking you in. This integration is part of that promise.
+
+And every mile with Smartboatia helps the oceans: environmental data from boats flows into ocean research with partners such as GEOMAR, AWI and the German Weather Service (DWD).
+
+👉 [Discover Smartboatia](https://www.smartboatia.com/en/) · [Try it for 30 days](https://www.smartboatia.com/en/30-day-trial/)
 
 ## Installation
 
@@ -32,7 +39,7 @@ Installation via [HACS](https://hacs.xyz) as a custom repository will be describ
 
 ## Support
 
-- Questions about your Hub, the app or your account: [Smartboatia help portal](https://smartboatia.atlassian.net/servicedesk/customer/portals) or support@smartboatia.com
+- Questions about Smartboatia, the app or your account: [Smartboatia help portal](https://smartboatia.atlassian.net/servicedesk/customer/portals) or support@smartboatia.com
 - Bugs and feature requests for this integration: please open an [issue](../../issues)
 - Security issues: please do not open a public issue, see [SECURITY.md](SECURITY.md)
 
@@ -46,4 +53,5 @@ This project is licensed under the [GNU General Public License v3.0](LICENSE).
 
 ---
 
-Made with ❤️ on the Baltic Sea by [Smartboatia GmbH](https://www.smartboatia.com/en/), 23570 Lübeck, Germany
+**Sail smarter. Sail together. Protect the oceans.**
+[Smartboatia GmbH](https://www.smartboatia.com/en/), 23570 Lübeck, Germany
