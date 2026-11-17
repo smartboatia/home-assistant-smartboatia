@@ -1,0 +1,102 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Boot verbinden",
+        "description": "Gib den API-Schlüssel ein, den du in deinem Smartboatia-Konto erstellt hast. Er beginnt mit `sbk_`.",
+        "data": { "api_key": "API-Schlüssel" }
+      },
+      "reauth_confirm": {
+        "title": "Smartboatia erneut anmelden",
+        "description": "Der API-Schlüssel wurde abgelehnt. Gib einen neuen API-Schlüssel für dasselbe Boot ein.",
+        "data": { "api_key": "API-Schlüssel" }
+      }
+    },
+    "error": {
+      "invalid_key_format": "Das sieht nicht wie ein Smartboatia-API-Schlüssel aus.",
+      "invalid_auth": "Der API-Schlüssel ist ungültig, widerrufen oder abgelaufen.",
+      "not_owner": "Die Person, die diesen Schlüssel erstellt hat, ist nicht mehr Eigner des Boots.",
+      "no_subscription": "Das Boot hat kein aktives Smartboatia-Abo.",
+      "rate_limited": "Zu viele Versuche mit diesem Schlüssel. Versuche es später erneut.",
+      "cannot_connect": "Die Smartboatia-Cloud ist gerade nicht erreichbar.",
+      "unknown": "Unerwarteter Fehler."
+    },
+    "abort": {
+      "already_configured": "Dieses Boot ist bereits eingerichtet.",
+      "wrong_boat": "Dieser API-Schlüssel gehört zu einem anderen Boot.",
+      "reauth_successful": "Erneute Anmeldung erfolgreich."
+    }
+  },
+  "entity": {
+    "device_tracker": { "position": { "name": "Position" } },
+    "sensor": {
+      "board_voltage": { "name": "Bordspannung" },
+      "heading": { "name": "Kompasskurs" },
+      "sea_roughness": { "name": "Seegang" },
+      "wind_speed_ground": { "name": "Windgeschwindigkeit (über Grund)" },
+      "wind_speed_true": { "name": "Windgeschwindigkeit (wahr)" },
+      "wind_speed_apparent": { "name": "Windgeschwindigkeit (scheinbar)" },
+      "wind_direction_ground": { "name": "Windrichtung (über Grund)" },
+      "wind_direction_true": { "name": "Windrichtung (wahr)" },
+      "wind_angle_apparent": { "name": "Windwinkel (scheinbar)" },
+      "water_depth": { "name": "Wassertiefe" },
+      "atmospheric_pressure": { "name": "Luftdruck" },
+      "speed_through_water": { "name": "Fahrt durchs Wasser" },
+      "speed_over_ground": { "name": "Fahrt über Grund" },
+      "course_over_ground": { "name": "Kurs über Grund" },
+      "course_over_ground_magnetic": { "name": "Kurs über Grund (magnetisch)" },
+      "water_temperature": { "name": "Wassertemperatur" },
+      "boat_state": {
+        "name": "Bootsstatus",
+        "state": {
+          "dwelling": "Verweilen",
+          "docked": "Im Hafen",
+          "moored": "Festgemacht",
+          "anchored": "Vor Anker",
+          "motoring": "Motorfahrt",
+          "motor_sailing": "Motorsegeln",
+          "sailing": "Segeln",
+          "moving": "In Fahrt",
+          "tack": "Wende",
+          "gybe": "Halse",
+          "engine_on": "Motor an",
+          "engine_off": "Motor aus",
+          "note": "Notiz",
+          "alarm_event": "Alarm",
+          "autopilot": "Autopilot",
+          "maintenance": "Wartung",
+          "refueling": "Tanken"
+        }
+      },
+      "battery_voltage": { "name": "Batterie {instance} Spannung" },
+      "battery_current": { "name": "Batterie {instance} Strom" },
+      "battery_temperature": { "name": "Batterie {instance} Temperatur" },
+      "battery_charge": { "name": "Batterie {instance} Ladung" },
+      "battery_health": { "name": "Batterie {instance} Zustand" },
+      "freshwater_level": { "name": "Frischwassertank {instance}" },
+      "fuel_level": { "name": "Kraftstofftank {instance}" },
+      "blackwater_level": { "name": "Schwarzwassertank {instance}" },
+      "engine_speed": { "name": "Motor {instance} Drehzahl" },
+      "engine_boost_pressure": { "name": "Motor {instance} Ladedruck" },
+      "engine_tilt_trim": { "name": "Motor {instance} Trimm" },
+      "engine_coolant_temperature": { "name": "Motor {instance} Kühlmitteltemperatur" },
+      "engine_oil_pressure": { "name": "Motor {instance} Öldruck" },
+      "engine_oil_temperature": { "name": "Motor {instance} Öltemperatur" },
+      "engine_alternator_voltage": { "name": "Motor {instance} Lichtmaschinenspannung" },
+      "engine_fuel_rate": { "name": "Motor {instance} Kraftstoffverbrauch" },
+      "engine_hours": { "name": "Motor {instance} Betriebsstunden" },
+      "engine_fuel_pressure": { "name": "Motor {instance} Kraftstoffdruck" },
+      "engine_coolant_pressure": { "name": "Motor {instance} Kühlmitteldruck" },
+      "engine_load": { "name": "Motor {instance} Last" },
+      "engine_torque": { "name": "Motor {instance} Drehmoment" },
+      "engine_status_1": { "name": "Motor {instance} Status 1" },
+      "engine_status_2": { "name": "Motor {instance} Status 2" },
+      "transmission_gear": {
+        "name": "Getriebe {instance} Gang",
+        "state": { "forward": "Vorwärts", "neutral": "Neutral", "reverse": "Rückwärts" }
+      },
+      "transmission_oil_pressure": { "name": "Getriebe {instance} Öldruck" },
+      "transmission_oil_temperature": { "name": "Getriebe {instance} Öltemperatur" }
+    }
+  }
+}

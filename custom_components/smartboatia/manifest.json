@@ -1,0 +1,13 @@
+{
+  "domain": "smartboatia",
+  "name": "Smartboatia",
+  "codeowners": ["@smartboatia"],
+  "config_flow": true,
+  "documentation": "https://github.com/smartboatia/home-assistant-smartboatia",
+  "integration_type": "service",
+  "iot_class": "cloud_push",
+  "issue_tracker": "https://github.com/smartboatia/home-assistant-smartboatia/issues",
+  "loggers": ["custom_components.smartboatia"],
+  "requirements": ["paho-mqtt>=2.1.0,<3"],
+  "version": "0.1.0"
+}

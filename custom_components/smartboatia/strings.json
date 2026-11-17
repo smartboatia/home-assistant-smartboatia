@@ -1,0 +1,102 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect your boat",
+        "description": "Enter the API key you created in your Smartboatia account. It starts with `sbk_`.",
+        "data": { "api_key": "API key" }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate Smartboatia",
+        "description": "The API key was rejected. Enter a new API key for the same boat.",
+        "data": { "api_key": "API key" }
+      }
+    },
+    "error": {
+      "invalid_key_format": "This does not look like a Smartboatia API key.",
+      "invalid_auth": "The API key is invalid, revoked or expired.",
+      "not_owner": "The person who created this key is no longer an owner of the boat.",
+      "no_subscription": "The boat has no active Smartboatia subscription.",
+      "rate_limited": "Too many attempts with this key. Try again later.",
+      "cannot_connect": "The Smartboatia cloud cannot be reached right now.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This boat is already configured.",
+      "wrong_boat": "This API key belongs to a different boat.",
+      "reauth_successful": "Reauthentication successful."
+    }
+  },
+  "entity": {
+    "device_tracker": { "position": { "name": "Position" } },
+    "sensor": {
+      "board_voltage": { "name": "Board voltage" },
+      "heading": { "name": "Heading" },
+      "sea_roughness": { "name": "Sea roughness" },
+      "wind_speed_ground": { "name": "Wind speed (ground)" },
+      "wind_speed_true": { "name": "Wind speed (true)" },
+      "wind_speed_apparent": { "name": "Wind speed (apparent)" },
+      "wind_direction_ground": { "name": "Wind direction (ground)" },
+      "wind_direction_true": { "name": "Wind direction (true)" },
+      "wind_angle_apparent": { "name": "Wind angle (apparent)" },
+      "water_depth": { "name": "Water depth" },
+      "atmospheric_pressure": { "name": "Atmospheric pressure" },
+      "speed_through_water": { "name": "Speed through water" },
+      "speed_over_ground": { "name": "Speed over ground" },
+      "course_over_ground": { "name": "Course over ground" },
+      "course_over_ground_magnetic": { "name": "Course over ground (magnetic)" },
+      "water_temperature": { "name": "Water temperature" },
+      "boat_state": {
+        "name": "Boat state",
+        "state": {
+          "dwelling": "Dwelling",
+          "docked": "Docked",
+          "moored": "Moored",
+          "anchored": "Anchored",
+          "motoring": "Motoring",
+          "motor_sailing": "Motor sailing",
+          "sailing": "Sailing",
+          "moving": "Moving",
+          "tack": "Tack",
+          "gybe": "Gybe",
+          "engine_on": "Engine on",
+          "engine_off": "Engine off",
+          "note": "Note",
+          "alarm_event": "Alarm",
+          "autopilot": "Autopilot",
+          "maintenance": "Maintenance",
+          "refueling": "Refueling"
+        }
+      },
+      "battery_voltage": { "name": "Battery {instance} voltage" },
+      "battery_current": { "name": "Battery {instance} current" },
+      "battery_temperature": { "name": "Battery {instance} temperature" },
+      "battery_charge": { "name": "Battery {instance} charge" },
+      "battery_health": { "name": "Battery {instance} health" },
+      "freshwater_level": { "name": "Fresh water tank {instance}" },
+      "fuel_level": { "name": "Fuel tank {instance}" },
+      "blackwater_level": { "name": "Black water tank {instance}" },
+      "engine_speed": { "name": "Engine {instance} speed" },
+      "engine_boost_pressure": { "name": "Engine {instance} boost pressure" },
+      "engine_tilt_trim": { "name": "Engine {instance} tilt/trim" },
+      "engine_coolant_temperature": { "name": "Engine {instance} coolant temperature" },
+      "engine_oil_pressure": { "name": "Engine {instance} oil pressure" },
+      "engine_oil_temperature": { "name": "Engine {instance} oil temperature" },
+      "engine_alternator_voltage": { "name": "Engine {instance} alternator voltage" },
+      "engine_fuel_rate": { "name": "Engine {instance} fuel rate" },
+      "engine_hours": { "name": "Engine {instance} hours" },
+      "engine_fuel_pressure": { "name": "Engine {instance} fuel pressure" },
+      "engine_coolant_pressure": { "name": "Engine {instance} coolant pressure" },
+      "engine_load": { "name": "Engine {instance} load" },
+      "engine_torque": { "name": "Engine {instance} torque" },
+      "engine_status_1": { "name": "Engine {instance} status 1" },
+      "engine_status_2": { "name": "Engine {instance} status 2" },
+      "transmission_gear": {
+        "name": "Transmission {instance} gear",
+        "state": { "forward": "Forward", "neutral": "Neutral", "reverse": "Reverse" }
+      },
+      "transmission_oil_pressure": { "name": "Transmission {instance} oil pressure" },
+      "transmission_oil_temperature": { "name": "Transmission {instance} oil temperature" }
+    }
+  }
+}
