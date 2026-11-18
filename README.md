@@ -185,9 +185,10 @@ this version.
 - **Entities missing**: entities for batteries, tanks, engines and so on appear
   when the Hub reports them for the first time, within about a minute. Entities
   for speed, wind, depth and the like always exist and stay unavailable while there
-  is no data. If **only** Position and Last update have values, check Settings,
-  Repairs: a "Smartboatia Hub update needed" hint means the Hub sends the old data
-  format. Update the Hub to 1.49.0 or newer; the hint disappears by itself.
+  is no data. If **all** entities stay unavailable, including Position and Last
+  update, check Settings, Repairs: a "Smartboatia Hub update needed" hint means the
+  Hub sends the old data format. Update the Hub to 1.49.0 or newer; the hint
+  disappears by itself.
 - **Debug logs**: add `custom_components.smartboatia: debug` to the `logger`
   configuration. The API key and the token are never written to the log.
 

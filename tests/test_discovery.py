@@ -222,6 +222,21 @@ async def test_unload_and_removal_delete_the_issue(hass):
     assert issue(hass, entry) is None
 
 
+async def test_payload_in_flight_during_unload_does_not_leave_the_issue(hass):
+    entry = await setup_entry(hass)
+    conn = FakeConnection.last
+    original = conn.async_stop
+
+    async def stop_with_queued_payload():
+        conn.on_payload(LEGACY)  # was queued before the stop, runs during it
+        await original()
+
+    conn.async_stop = stop_with_queued_payload
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    assert conn.stopped
+    assert issue(hass, entry) is None
+
+
 def test_discovery_text_names_groups_in_human_terms():
     text = discovery_text(
         "Boat X",

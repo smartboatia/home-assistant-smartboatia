@@ -10,6 +10,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import datetime
 
+from homeassistant.components import persistent_notification
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -30,7 +31,6 @@ from homeassistant.const import (
     UnitOfTime,
     UnitOfVolumeFlowRate,
 )
-from homeassistant.components import persistent_notification
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -323,11 +323,7 @@ def description_for(key: ValueKey) -> SmartboatiaSensorDescription | None:
         translation_key = "course_over_ground_magnetic"
     elif measurement == "cog" and variant != "true":
         return None
-    return replace(
-        base,
-        key="_".join(part for part in key if part),
-        translation_key=translation_key,
-    )
+    return replace(base, key="_".join(part for part in key if part) , translation_key=translation_key)
 
 
 # Variants (wind reference, course orientation) of the values without an instance

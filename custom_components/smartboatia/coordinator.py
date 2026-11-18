@@ -9,8 +9,8 @@ import time
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import Event, HomeAssistant, callback
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
@@ -63,6 +63,7 @@ class SmartboatiaCoordinator(DataUpdateCoordinator[BoatSnapshot]):
         self.connection_state = "connecting"
         self._last_received: float | None = None
         self._seen_message = False
+        self._stopped = False
         self.connection = (connection_factory or SmartboatiaConnection)(
             hass,
             async_get_clientsession(hass),
@@ -98,6 +99,7 @@ class SmartboatiaCoordinator(DataUpdateCoordinator[BoatSnapshot]):
 
     async def async_stop(self) -> None:
         """Stop the connection."""
+        self._stopped = True
         await self.connection.async_stop()
 
     @callback
@@ -148,6 +150,8 @@ class SmartboatiaCoordinator(DataUpdateCoordinator[BoatSnapshot]):
 
     @callback
     def _raise_hub_update_issue(self) -> None:
+        if self._stopped:
+            return
         ir.async_create_issue(
             self.hass,
             DOMAIN,
