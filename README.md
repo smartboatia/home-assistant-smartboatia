@@ -40,6 +40,9 @@ And every mile with Smartboatia helps the oceans: environmental data from boats 
 
 - A Smartboatia Hub that sends data to the cloud, with an active Smartboatia
   subscription on the boat.
+- Smartboatia Hub software 1.49.0 or newer. Older Hubs send a data format this
+  integration does not read; Home Assistant then shows a repair hint ("Smartboatia
+  Hub update needed") and no values appear.
 - You are an owner of the boat in your Smartboatia account.
 - Home Assistant 2025.5 or newer. This minimum comes from checking the Home Assistant
   sources: the `measurement_angle` state class first appears in 2025.4.0 and the
@@ -98,9 +101,14 @@ and the connection is renewed automatically.
 
 ## Entities
 
-One device per boat. Entities appear when the value is first seen. A value that is
-missing from a message (sensor off, data too old) makes the entity
-**unavailable**, never zero. If no live message arrives for ten minutes all values
+One device per boat. Everything without an instance number (speed, course, heading,
+wind, depth, temperatures, pressure, sea roughness, board voltage, boat state) exists
+from the start and is **unavailable** until a value arrives, for example because the
+boat has no such sensor or the Hub is offline. Entities for batteries, tanks, engines
+and transmissions appear when the Hub reports them for the first time, and Home
+Assistant then shows one notification that lists what was found (only the first time,
+not at every restart). A value that is missing from a message (sensor off, data too
+old) makes the entity **unavailable**, never zero. If no live message arrives for ten minutes all values
 become unavailable.
 
 The broker replays the last message (a "retained" message) every time the
@@ -133,8 +141,8 @@ so you can see how old the data is.
 | Transmission N: gear, oil pressure, oil temperature | bar, °C |
 
 `N` is the NMEA 2000 instance number as the Hub reports it (starting at 0). Which
-entities you get depends on what is on your boat's bus. Entities for heading and
-speed through water only appear if the Hub sends them. Alarms are not part of
+instance entities you get depends on what is on your boat's bus; the other entities
+stay unavailable if your boat has no sensor for them. Alarms are not part of
 this version.
 
 ## Limits
@@ -175,7 +183,11 @@ this version.
   message is shown for up to ten minutes. During normal operation a boat that goes
   offline still becomes unavailable ten minutes after its last live message.
 - **Entities missing**: entities for batteries, tanks, engines and so on appear
-  when the Hub reports them for the first time, within about a minute.
+  when the Hub reports them for the first time, within about a minute. Entities
+  for speed, wind, depth and the like always exist and stay unavailable while there
+  is no data. If **only** Position and Last update have values, check Settings,
+  Repairs: a "Smartboatia Hub update needed" hint means the Hub sends the old data
+  format. Update the Hub to 1.49.0 or newer; the hint disappears by itself.
 - **Debug logs**: add `custom_components.smartboatia: debug` to the `logger`
   configuration. The API key and the token are never written to the log.
 

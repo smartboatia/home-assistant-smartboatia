@@ -3,6 +3,7 @@
   "name": "Smartboatia",
   "codeowners": ["@smartboatia"],
   "config_flow": true,
+  "dependencies": ["persistent_notification"],
   "documentation": "https://github.com/smartboatia/home-assistant-smartboatia",
   "integration_type": "service",
   "iot_class": "cloud_push",

@@ -8,8 +8,10 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryError
+from homeassistant.helpers import issue_registry as ir
 
-from .coordinator import SmartboatiaCoordinator
+from .const import DOMAIN
+from .coordinator import SmartboatiaCoordinator, hub_update_issue_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,9 +36,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: SmartboatiaConfigEntry) 
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: SmartboatiaConfigEntry) -> bool:
+async def async_unload_entry(
+    hass: HomeAssistant, entry: SmartboatiaConfigEntry
+) -> bool:
     """Unload the entry and close the broker connection."""
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
+        entry.runtime_data.clear_hub_update_issue()
         await entry.runtime_data.async_stop()
     return unloaded
+
+
+async def async_remove_entry(
+    hass: HomeAssistant, entry: SmartboatiaConfigEntry
+) -> None:
+    """Drop the repair issue of a removed entry (also if it never loaded)."""
+    ir.async_delete_issue(hass, DOMAIN, hub_update_issue_id(entry.entry_id))

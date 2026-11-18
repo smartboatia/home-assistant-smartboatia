@@ -20,5 +20,10 @@ First version.
   (ground, true, apparent), water depth, water temperature, atmospheric pressure,
   sea roughness, board voltage, boat state, battery banks, fresh water, fuel and
   black water tanks, engines and transmissions, and a diagnostic last update.
+- Sensors without an instance number exist from setup on and are unavailable until
+  their value arrives; Home Assistant shows one notification when batteries, tanks,
+  engines or transmissions are found for the first time.
+- Repair issue "Smartboatia Hub update needed" when the Hub sends the legacy data
+  format (Hub 1.49.0 or newer is required).
 - English and German translations, diagnostics with secrets and position redacted.
 - Brand images (`custom_components/smartboatia/brand/`).

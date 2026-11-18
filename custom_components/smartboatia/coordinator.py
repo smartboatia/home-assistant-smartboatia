@@ -10,6 +10,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
@@ -25,6 +26,11 @@ from .models import BoatSnapshot, build_snapshot
 from .n_message import NMessageError, decode_n_message, is_v3
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def hub_update_issue_id(entry_id: str) -> str:
+    """Id of the "Hub update needed" repair issue of a config entry."""
+    return f"hub_update_needed_{entry_id}"
 
 
 def _now() -> datetime:
@@ -106,6 +112,9 @@ class SmartboatiaCoordinator(DataUpdateCoordinator[BoatSnapshot]):
         """
         if not is_v3(payload):
             _LOGGER.debug("Ignoring a message that is not N-message v3")
+            if payload:
+                # an old Hub sends the legacy text format (also as retained message)
+                self._raise_hub_update_issue()
             return
         if retained and self._seen_message:
             # A replay after a reconnect: never refreshes the liveness timer and
@@ -119,6 +128,7 @@ class SmartboatiaCoordinator(DataUpdateCoordinator[BoatSnapshot]):
             _LOGGER.debug("Discarding an invalid N-message (%s)", err)
             return
         self._seen_message = True
+        self.clear_hub_update_issue()
         snapshot = build_snapshot(message)
         # A message older than the stale limit only updates the "last update"
         # timestamp (so a Hub clock more than the stale limit behind real time shows
@@ -135,6 +145,24 @@ class SmartboatiaCoordinator(DataUpdateCoordinator[BoatSnapshot]):
         else:
             self._last_received = _monotonic()
         self.async_set_updated_data(snapshot)
+
+    @callback
+    def _raise_hub_update_issue(self) -> None:
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            hub_update_issue_id(self.config_entry.entry_id),
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="hub_update_needed",
+        )
+
+    @callback
+    def clear_hub_update_issue(self) -> None:
+        """Remove the "Hub update needed" repair issue (a no-op without one)."""
+        ir.async_delete_issue(
+            self.hass, DOMAIN, hub_update_issue_id(self.config_entry.entry_id)
+        )
 
     @callback
     def _check_stale(self, _now: datetime) -> None:

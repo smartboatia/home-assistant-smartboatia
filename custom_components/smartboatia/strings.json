@@ -195,5 +195,11 @@
         "name": "Last update"
       }
     }
+  },
+  "issues": {
+    "hub_update_needed": {
+      "title": "Smartboatia Hub update needed",
+      "description": "The Hub of your boat sends data in an old format that this integration does not read, so no values appear. Update the Smartboatia Hub to version 1.49.0 or newer. This message disappears by itself as soon as a current message arrives."
+    }
   }
 }

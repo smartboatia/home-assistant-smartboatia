@@ -14,6 +14,11 @@ def short_boat_id(boat_id: str) -> str:
     return boat_id[-6:]
 
 
+def boat_device_name(boat_id: str) -> str:
+    """Name of the boat's device."""
+    return f"Smartboatia boat {short_boat_id(boat_id)}"
+
+
 class SmartboatiaEntity(CoordinatorEntity[SmartboatiaCoordinator]):
     """Entity of the boat device."""
 
@@ -25,6 +30,6 @@ class SmartboatiaEntity(CoordinatorEntity[SmartboatiaCoordinator]):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, coordinator.boat_id)},
             manufacturer="Smartboatia",
-            name=f"Smartboatia boat {short_boat_id(coordinator.boat_id)}",
+            name=boat_device_name(coordinator.boat_id),
             model="Boat",
         )

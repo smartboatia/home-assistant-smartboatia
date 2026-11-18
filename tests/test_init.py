@@ -74,8 +74,8 @@ async def test_entities_from_spec_example(hass):
     entry = await setup_entry(hass)
     assert entry.state is ConfigEntryState.LOADED
     assert FakeConnection.last.started
-    # nothing yet: no message, no data
-    assert hass.states.get("sensor.smartboatia_boat_a1b2c3_speed_over_ground") is None
+    # nothing yet: the fixed sensor exists but has no data
+    assert hass.states.get("sensor.smartboatia_boat_a1b2c3_speed_over_ground").state == "unavailable"
 
     with patch(NOW, return_value=datetime.fromtimestamp(EXAMPLE_TS / 1000 + 5, UTC)):
         FakeConnection.last.on_payload(bytes.fromhex(EXAMPLE_HEX))
@@ -200,7 +200,7 @@ async def test_old_retained_message_is_not_live(hass):
             make_message((18, 5.0), (10, {0: 53.55, 1: 9.99}), ts=ms(-86400))
         )
         await hass.async_block_till_done()
-        assert hass.states.get("sensor.smartboatia_boat_a1b2c3_speed_over_ground") is None
+        assert hass.states.get("sensor.smartboatia_boat_a1b2c3_speed_over_ground").state == "unavailable"
         tracker = hass.states.get("device_tracker.smartboatia_boat_a1b2c3_position")
         assert tracker.state == "unavailable"
         # the user can still see how old the data is
@@ -235,7 +235,7 @@ async def test_message_age_and_clock_skew(hass, offset, live):
     if live:
         assert sog.state == "5.0"
     else:
-        assert sog is None
+        assert sog.state == "unavailable"
 
 
 async def test_diagnostics_redact_secrets(hass, hass_client):
@@ -302,7 +302,7 @@ async def test_first_retained_message_old_is_not_live(hass):
     with patch(NOW, return_value=T0), patch(MONO, return_value=1000.0):
         FakeConnection.last.on_payload(make_message((18, 5.0), ts=ms(-3600)), True)
         await hass.async_block_till_done()
-    assert sog(hass) is None
+    assert sog(hass).state == "unavailable"
     last = hass.states.get("sensor.smartboatia_boat_a1b2c3_last_update")
     assert last.state == (T0 - timedelta(hours=1)).isoformat()
 

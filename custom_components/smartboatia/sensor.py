@@ -1,4 +1,8 @@
-"""Sensors of the boat. Instances (batteries, tanks, engines) appear when first seen."""
+"""Sensors of the boat.
+
+Fixed values exist from setup on; instances (batteries, tanks, engines) appear
+when first seen.
+"""
 
 from __future__ import annotations
 
@@ -26,13 +30,16 @@ from homeassistant.const import (
     UnitOfTime,
     UnitOfVolumeFlowRate,
 )
+from homeassistant.components import persistent_notification
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
 from . import SmartboatiaConfigEntry
+from .const import DOMAIN
 from .coordinator import SmartboatiaCoordinator
-from .entity import SmartboatiaEntity
+from .entity import SmartboatiaEntity, boat_device_name
 from .models import ValueKey
 from .n_message import ENGINE_STATUS_1_BITS, ENGINE_STATUS_2_BITS, GEAR_NAMES
 
@@ -306,12 +313,81 @@ def description_for(key: ValueKey) -> SmartboatiaSensorDescription | None:
         return None
     translation_key = base.translation_key
     if measurement == "wind":
+        # the decoder names the apparent direction ``rel_angle``, nothing else does
+        if (variant == "apparent" and name == "direction") or (
+            variant != "apparent" and name == "rel_angle"
+        ):
+            return None
         translation_key = f"{translation_key}_{variant}"
     elif measurement == "cog" and variant == "magnetic":
         translation_key = "course_over_ground_magnetic"
     elif measurement == "cog" and variant != "true":
         return None
-    return replace(base, key="_".join(part for part in key if part) , translation_key=translation_key)
+    return replace(
+        base,
+        key="_".join(part for part in key if part),
+        translation_key=translation_key,
+    )
+
+
+# Variants (wind reference, course orientation) of the values without an instance
+# number. The only hand-maintained list: the rest of ``FIXED_VALUE_KEYS`` follows
+# ``DESCRIPTIONS``, and a test checks it against ``strings.json``.
+_FIXED_VARIANTS: dict[str, tuple[str, ...]] = {
+    "wind": ("ground", "true", "apparent"),
+    "cog": ("true", "magnetic"),
+}
+
+
+def _fixed_value_keys() -> tuple[ValueKey, ...]:
+    keys = (
+        (measurement, variant, name)
+        for measurement, name in DESCRIPTIONS
+        if measurement not in _INSTANCE_MEASUREMENTS
+        for variant in _FIXED_VARIANTS.get(measurement, ("",))
+    )
+    return tuple(key for key in keys if description_for(key) is not None)
+
+
+# Values without an instance number: created at setup, unavailable until they arrive.
+FIXED_VALUE_KEYS = _fixed_value_keys()
+
+# group of an instance sensor -> name used in the "new sensors" notification
+_GROUP_NAMES = {
+    "battery": "Battery",
+    "freshwater": "Fresh water tank",
+    "fuel": "Fuel tank",
+    "blackwater": "Black water tank",
+    "engine_n2k": "Engine",
+    "transmission": "Transmission",
+}
+_GROUP_ORDER = list(_GROUP_NAMES)
+
+
+def _detail(description: SmartboatiaSensorDescription) -> str:
+    """Short name of a measurement within its group ("charge", "oil pressure")."""
+    assert description.translation_key is not None
+    _, _, detail = description.translation_key.partition("_")
+    return "" if detail == "level" else detail.replace("_", " ")
+
+
+def discovery_text(boat_name: str, found: list[ValueKey]) -> str:
+    """Human description of newly discovered instance sensors."""
+    groups: dict[tuple[str, str], list[str]] = {}
+    for key in found:
+        description = description_for(key)
+        if description is not None:
+            detail = _detail(description)
+            groups.setdefault(key[:2], []).append(detail)
+    parts = []
+    for (measurement, instance), details in sorted(
+        groups.items(), key=lambda item: (_GROUP_ORDER.index(item[0][0]), item[0][1])
+    ):
+        label = f"{_GROUP_NAMES[measurement]} {instance}"
+        parts.append(
+            f"{label} ({', '.join(d for d in details if d)})" if any(details) else label
+        )
+    return f"New sensors found on board of {boat_name}: {', '.join(parts)}."
 
 
 async def async_setup_entry(
@@ -319,24 +395,48 @@ async def async_setup_entry(
     entry: SmartboatiaConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Create sensors as their values show up in the messages."""
+    """Create the fixed sensors now and the instance sensors as they show up."""
     coordinator = entry.runtime_data
+    registry = er.async_get(hass)
     known: set[ValueKey] = set()
+    fixed: list[SmartboatiaSensor] = []
+    for key in FIXED_VALUE_KEYS:
+        known.add(key)
+        description = description_for(key)
+        assert description is not None
+        fixed.append(SmartboatiaSensor(coordinator, description, key))
 
     @callback
     def _add_new() -> None:
         new: list[SmartboatiaSensor] = []
+        unseen: list[ValueKey] = []
         for key in coordinator.data.values:
             if key in known:
                 continue
             known.add(key)
             description = description_for(key)
-            if description is not None:
-                new.append(SmartboatiaSensor(coordinator, description, key))
+            if description is None:
+                continue
+            sensor = SmartboatiaSensor(coordinator, description, key)
+            new.append(sensor)
+            if (
+                registry.async_get_entity_id("sensor", DOMAIN, sensor.unique_id or "")
+                is None
+            ):
+                unseen.append(key)
         if new:
             async_add_entities(new)
+        if unseen:
+            # one notification per batch; the id is stable per entry, so a later
+            # discovery replaces the text instead of piling up another one
+            persistent_notification.async_create(
+                hass,
+                discovery_text(boat_device_name(coordinator.boat_id), unseen),
+                title="Smartboatia",
+                notification_id=f"{DOMAIN}_{entry.entry_id}_new_sensors",
+            )
 
-    async_add_entities([SmartboatiaLastUpdate(coordinator)])
+    async_add_entities([SmartboatiaLastUpdate(coordinator), *fixed])
     _add_new()
     entry.async_on_unload(coordinator.async_add_listener(_add_new))
 
