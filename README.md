@@ -82,8 +82,10 @@ Treat the key like a password.
 
 ## Set up
 
-Settings, Devices & services, Add integration, **Smartboatia**, paste the API
-key. One entry is one boat; add more entries with other keys for more boats.
+[![Add integration to Home Assistant](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=smartboatia)
+
+Click the button, or open Settings, Devices & services, Add integration,
+**Smartboatia**. Then paste the API key. One entry is one boat; add more entries with other keys for more boats.
 
 ## How it works
 
