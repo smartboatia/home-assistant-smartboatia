@@ -21,18 +21,18 @@ You know whether the garage door is closed. But is your boat fine? Is it still w
 
 Smartboatia makes boats smarter, for sail and motor boats alike. The Smartboatia Hub on board, the app and the cloud work together and turn the data your boat already produces into answers instead of numbers. Built by sailors in Travemünde, Germany.
 
-- 📔 **Logbook that writes itself.** Casting off, anchoring, mooring, engine hours and manoeuvres are logged automatically. Add notes, photos and crew whenever you like.
-- ⚓ **Boat monitoring, on board and ashore.** Anchor watch, batteries and position at a glance, with alarms that run on board even when your phone is off.
+- 📔 **Logbook that writes itself.** Casting off, anchoring, mooring and manoeuvres are logged automatically. Add notes and crew details whenever you like.
+- ⚓ **Boat monitoring, on board and ashore.** Anchor watch, batteries and position at a glance. The anchor watch runs on the Hub, even when your phone is off.
 - 🌬️ **Weather and environment.** Your boat measures for itself: real trends in wind and air pressure, exactly where you are.
-- 🧭 **Plotter and navigation.** Your boat's data and charts on every device.
-- 📱 **Community and sharing.** Share your trips with crew, family and friends, and see where your boat buddies are.
+- 🧭 **Plotter and navigation.** Instruments and charts on your phone and tablet.
+- 📱 **Community and sharing.** Invite crew, family and friends as Boat Buddies: they see live where you are and can follow your logbook.
 - 🏆 **Sailing performance.** Polars from your own data, trim tips and manoeuvre analysis, for sailors.
 
 ## Open by design
 
 Your data belongs to you. Smartboatia uses open interfaces and connects to what you already have instead of locking you in. This integration is part of that promise.
 
-And every mile with Smartboatia helps the oceans: environmental data from boats flows into ocean research with partners such as GEOMAR, AWI and the German Weather Service (DWD).
+Smartboatia is built so that environmental data from boats can support ocean research, if you choose to share it.
 
 👉 [Discover Smartboatia](https://www.smartboatia.com/en/) · [Try it for 30 days](https://www.smartboatia.com/en/30-day-trial/)
 
@@ -143,7 +143,7 @@ so you can see how old the data is.
 `N` is the NMEA 2000 instance number as the Hub reports it (starting at 0). Which
 instance entities you get depends on what is on your boat's bus; the other entities
 stay unavailable if your boat has no sensor for them. Alarms are not part of
-this version.
+this version; they will be added in a future release.
 
 ## Limits
 
